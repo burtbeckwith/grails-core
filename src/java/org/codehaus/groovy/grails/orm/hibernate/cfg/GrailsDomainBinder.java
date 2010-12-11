@@ -650,7 +650,7 @@ public final class GrailsDomainBinder {
         return s.startsWith("`") && s.endsWith("`") ? s.substring(1, s.length() - 1) : s;
     }
 
-	private static Column getColumnForSimpleValue(SimpleValue element) {
+    private static Column getColumnForSimpleValue(SimpleValue element) {
         return (Column)element.getColumnIterator().next();
     }
 
@@ -2308,21 +2308,22 @@ public final class GrailsDomainBinder {
                 column.setValue(simpleValue);
                 bindColumn(grailsProp, parentProperty, column, cc, path, table);
 
-                if(cc != null) {
-                	if(cc.getLength() != -1) {
-                		column.setLength(cc.getLength());
-                	}
-                	if(cc.getPrecision() != -1) {
-                		column.setPrecision(cc.getPrecision());
-                	}
-                	if(cc.getScale() != -1) {
-                		column.setScale(cc.getScale());
-                	}
-                	column.setUnique(cc.isUnique());
+                if (cc != null) {
+                    if (cc.getLength() != -1) {
+                        column.setLength(cc.getLength());
+                    }
+                    if (cc.getPrecision() != -1) {
+                        column.setPrecision(cc.getPrecision());
+                    }
+                    if (cc.getScale() != -1) {
+                        column.setScale(cc.getScale());
+                    }
+                    column.setUnique(cc.isUnique());
                 }
-                
-                if (table != null)
+
+                if (table != null) {
                     table.addColumn(column);
+                }
 
                 simpleValue.addColumn(column);
             }
@@ -2333,8 +2334,9 @@ public final class GrailsDomainBinder {
         final String typeName = getTypeName(grailsProp, getPropertyConfig(grailsProp), getMapping(grailsProp.getDomainClass()));
         if (typeName != null) {
             simpleValue.setTypeName(typeName);
-            if (config!=null)
+            if (config != null) {
                 simpleValue.setTypeParameters(config.getTypeParams());
+            }
         } else {
             simpleValue.setTypeName(grailsProp.getType().getName());
         }

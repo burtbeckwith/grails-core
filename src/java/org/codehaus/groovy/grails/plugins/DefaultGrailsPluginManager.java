@@ -304,7 +304,7 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager impl
                 int j = newList.indexOf(loadBeforePlugin);
                 if (i > j) {
                     newList.remove(plugin);
-                    newList.add(j,plugin);
+                    newList.add(j, plugin);
                 }
             }
 
@@ -370,15 +370,14 @@ public class DefaultGrailsPluginManager extends AbstractGrailsPluginManager impl
         return grailsCorePlugins;
     }
 
-	protected GrailsPlugin createGrailsPlugin(Class<?> pluginClass) {
-		return new DefaultGrailsPlugin(pluginClass, application);
-	}
+    protected GrailsPlugin createGrailsPlugin(Class<?> pluginClass) {
+        return new DefaultGrailsPlugin(pluginClass, application);
+    }
 
-	protected GrailsPlugin createGrailsPlugin(Class<?> pluginClass,
-			Resource resource) {
-		return new DefaultGrailsPlugin(pluginClass, resource, application);
-	}
-	
+    protected GrailsPlugin createGrailsPlugin(Class<?> pluginClass, Resource resource) {
+        return new DefaultGrailsPlugin(pluginClass, resource, application);
+    }
+
     private List<GrailsPlugin>  findUserPlugins(ClassLoader gcl) {
         List<GrailsPlugin>  grailsUserPlugins = new ArrayList<GrailsPlugin>();
 

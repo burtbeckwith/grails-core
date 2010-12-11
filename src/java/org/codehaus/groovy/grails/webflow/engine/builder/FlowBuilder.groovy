@@ -500,11 +500,11 @@ class FlowInfoCapturer {
                 def urlMapper =  applicationContext?.getBean(UrlMappingsHolder.BEAN_ID)
                 def params = args.params ?: [:]
                 if (args.id) params.id = args.id
-				def controllerName = args.controller
-				if(!controllerName) {
-				    def webRequest = RequestContextHolder.currentRequestAttributes()
-				    controllerName = webRequest?.controllerName
-				}
+                def controllerName = args.controller
+                if (!controllerName) {
+                    def webRequest = RequestContextHolder.currentRequestAttributes()
+                    controllerName = webRequest?.controllerName
+                }
                 redirectUrl = new RuntimeRedirectAction(controller:controllerName,
                     action:args.action,
                     params:params,

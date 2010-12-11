@@ -27,9 +27,9 @@ import org.springframework.core.io.Resource;
 
 public class Grailsc extends Groovyc {
 
-	private List<File> destList = new ArrayList<File>();
-	@Override
-	protected void scanDir(File srcDir, File destDir, String[] files) {
+    private List<File> destList = new ArrayList<File>();
+    @Override
+    protected void scanDir(File srcDir, File destDir, String[] files) {
        List<File> srcList = new ArrayList<File>();
        String srcPath = srcDir.getAbsolutePath();
        String destPath = destDir.getAbsolutePath();
@@ -60,13 +60,13 @@ public class Grailsc extends Groovyc {
            }
        }
        addToCompileList(srcList.toArray(new File[srcList.size()]));
-	}
-	
-	@Override
-	protected void compile() {
+    }
+
+    @Override
+    protected void compile() {
         configureResourceLoader();
 
-        if (compileList.length>0) {
+        if (compileList.length > 0) {
             long now = System.currentTimeMillis();
             try {
                 super.compile();
@@ -79,13 +79,13 @@ public class Grailsc extends Groovyc {
                 }
             }
         }
-	}
-	
+    }
+
     private void configureResourceLoader() {
-    	String sysProp = System.getProperty("base.dir");
+        String sysProp = System.getProperty("base.dir");
         String basedir = sysProp != null ? sysProp : ".";
         Resource[] resources = GrailsPluginUtils.getArtefactResources(basedir);
         GrailsResourceLoader resourceLoader = new GrailsResourceLoader(resources);
         GrailsResourceLoaderHolder.setResourceLoader(resourceLoader);
-    }	
+    }
 }

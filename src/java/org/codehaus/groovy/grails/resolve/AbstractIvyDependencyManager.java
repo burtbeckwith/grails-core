@@ -124,45 +124,42 @@ public abstract class AbstractIvyDependencyManager {
     protected String applicationName;
     protected String applicationVersion;
     protected DefaultDependencyDescriptor currentDependencyDescriptor;
-    protected DefaultModuleDescriptor moduleDescriptor;    
+    protected DefaultModuleDescriptor moduleDescriptor;
     protected boolean hasApplicationDependencies = false;
-    
-    
+
     public DefaultModuleDescriptor getModuleDescriptor() {
-		return moduleDescriptor;
-	}
+        return moduleDescriptor;
+    }
 
-	public void setModuleDescriptor(DefaultModuleDescriptor moduleDescriptor) {
-		this.moduleDescriptor = moduleDescriptor;
-	}
+    public void setModuleDescriptor(DefaultModuleDescriptor moduleDescriptor) {
+        this.moduleDescriptor = moduleDescriptor;
+    }
 
-	/**
+    /**
      * Returns true if the application has any dependencies that are not inherited
      * from the framework or other plugins
      */
-    
     public boolean hasApplicationDependencies() {
-		return hasApplicationDependencies;
-	}
-    
-	public DefaultDependencyDescriptor getCurrentDependencyDescriptor() {
-		return currentDependencyDescriptor;
-	}
+        return hasApplicationDependencies;
+    }
 
-	public void setCurrentDependencyDescriptor(
-			DefaultDependencyDescriptor currentDependencyDescriptor) {
-		this.currentDependencyDescriptor = currentDependencyDescriptor;
-	}
+    public DefaultDependencyDescriptor getCurrentDependencyDescriptor() {
+        return currentDependencyDescriptor;
+    }
 
-	public Collection<String> getUsedConfigurations() {
-		return usedConfigurations;
-	}
+    public void setCurrentDependencyDescriptor(DefaultDependencyDescriptor currentDependencyDescriptor) {
+        this.currentDependencyDescriptor = currentDependencyDescriptor;
+    }
 
-	public void setUsedConfigurations(Collection<String> usedConfigurations) {
-		this.usedConfigurations = usedConfigurations;
-	}
+    public Collection<String> getUsedConfigurations() {
+        return usedConfigurations;
+    }
 
-	/**
+    public void setUsedConfigurations(Collection<String> usedConfigurations) {
+        this.usedConfigurations = usedConfigurations;
+    }
+
+    /**
      * Obtains a set of dependency descriptors defined in the project
      */
     Set<DependencyDescriptor> getDependencyDescriptors() {
@@ -259,11 +256,11 @@ public abstract class AbstractIvyDependencyManager {
     }
 
     public void configureDependencyDescriptor(EnhancedDefaultDependencyDescriptor dependencyDescriptor, String scope) {
-    	configureDependencyDescriptor(dependencyDescriptor, scope, null, false);
+        configureDependencyDescriptor(dependencyDescriptor, scope, null, false);
     }
-    
+
     public void configureDependencyDescriptor(EnhancedDefaultDependencyDescriptor dependencyDescriptor, String scope, Closure dependencyConfigurer) {
-    	configureDependencyDescriptor(dependencyDescriptor, scope, dependencyConfigurer, false);
+        configureDependencyDescriptor(dependencyDescriptor, scope, dependencyConfigurer, false);
     }
 
     public void configureDependencyDescriptor(EnhancedDefaultDependencyDescriptor dependencyDescriptor, String scope, Closure dependencyConfigurer, boolean pluginMode ) {
@@ -284,7 +281,7 @@ public abstract class AbstractIvyDependencyManager {
         }
         if (dependencyDescriptor.getModuleConfigurations().length == 0){
             List<String> mappings = configurationMappings.get(scope);
-            if(mappings != null) {
+            if (mappings != null) {
                 for(String m : mappings) {
                     dependencyDescriptor.addDependencyConfiguration( scope, m );
                 }
@@ -302,11 +299,10 @@ public abstract class AbstractIvyDependencyManager {
         else {
             dependencyDescriptors.add(dependencyDescriptor);
             if (dependencyDescriptor.isExportedToApplication()) {
-            	moduleDescriptor.addDependency(dependencyDescriptor);
+                moduleDescriptor.addDependency(dependencyDescriptor);
             }
-            
         }
-    }    
+    }
 
     protected ArtifactId createExcludeArtifactId(String excludeName) {
         return createExcludeArtifactId(excludeName, PatternMatcher.ANY_EXPRESSION);

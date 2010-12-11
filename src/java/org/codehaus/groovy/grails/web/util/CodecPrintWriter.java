@@ -10,31 +10,31 @@ import java.lang.reflect.Method;
 import org.springframework.util.ReflectionUtils;
 
 public class CodecPrintWriter extends GrailsPrintWriter {
-	Method encodeMethod;
-	Class<?> encodeParamType;
-		
-	public CodecPrintWriter(Writer out, Class<?> codecClass) {
-		super(out);
-		allowUnwrappingOut=false;
-		initEncode(codecClass);
-	}
+    Method encodeMethod;
+    Class<?> encodeParamType;
 
-	private void initEncode(Class<?> codecClass) {
-		encodeMethod=ReflectionUtils.findMethod(codecClass, "encode", (Class<?>[])null);
-		ReflectionUtils.makeAccessible(encodeMethod);
-		encodeParamType=encodeMethod.getParameterTypes()[0];
-	}
-	
-	private Object encodeObject(Object o) {
-		try {
-			if (!encodeParamType.isInstance(o)) {
-				o=String.valueOf(o);
-			}
-			return ReflectionUtils.invokeMethod(encodeMethod, null, o);
-		} catch (Exception e) {
-			throw new RuntimeException("Problem calling encode method " + encodeMethod, e);
-		}
-	}
+    public CodecPrintWriter(Writer out, Class<?> codecClass) {
+        super(out);
+        allowUnwrappingOut=false;
+        initEncode(codecClass);
+    }
+
+    private void initEncode(Class<?> codecClass) {
+        encodeMethod=ReflectionUtils.findMethod(codecClass, "encode", (Class<?>[])null);
+        ReflectionUtils.makeAccessible(encodeMethod);
+        encodeParamType=encodeMethod.getParameterTypes()[0];
+    }
+
+    private Object encodeObject(Object o) {
+        try {
+            if (!encodeParamType.isInstance(o)) {
+                o=String.valueOf(o);
+            }
+            return ReflectionUtils.invokeMethod(encodeMethod, null, o);
+        } catch (Exception e) {
+            throw new RuntimeException("Problem calling encode method " + encodeMethod, e);
+        }
+    }
 
     /**
      * Print an object.  The string produced by the <code>{@link
@@ -51,17 +51,17 @@ public class CodecPrintWriter extends GrailsPrintWriter {
         encodeAndPrint(obj);
     }
 
-	private void encodeAndPrint(final Object obj) {
+    private void encodeAndPrint(final Object obj) {
         if (trouble || obj == null) {
             usageFlag = true;
             return;
-        }		
+        }
         Object encoded=encodeObject(obj);
         if (encoded instanceof StreamCharBuffer) {
-        	super.write((StreamCharBuffer)encoded);
+            super.write((StreamCharBuffer)encoded);
         }
         else if (encoded instanceof Writable) {
-        	super.write((Writable)encoded);
+            super.write((Writable)encoded);
         }
         else if (obj instanceof CharSequence) {
             try {
@@ -75,7 +75,7 @@ public class CodecPrintWriter extends GrailsPrintWriter {
         else {
             super.write(String.valueOf(encoded));
         }
-	}
+    }
 
     /**
      * Print a string.  If the argument is <code>null</code> then the string
@@ -108,7 +108,7 @@ public class CodecPrintWriter extends GrailsPrintWriter {
      */
     @Override
     public void write(final int c) {
-    	encodeAndPrint(c);
+        encodeAndPrint(c);
     }
 
     /**
@@ -119,7 +119,7 @@ public class CodecPrintWriter extends GrailsPrintWriter {
      */
     @Override
     public void write(final char buf[], final int off, final int len) {
-    	encodeAndPrint(new String(buf, off, len));
+        encodeAndPrint(new String(buf, off, len));
     }
 
     /**
@@ -130,12 +130,12 @@ public class CodecPrintWriter extends GrailsPrintWriter {
      */
     @Override
     public void write(final String s, final int off, final int len) {
-    	encodeAndPrint(s.substring(off, off+len));
+        encodeAndPrint(s.substring(off, off+len));
     }
 
     @Override
     public void write(final char buf[]) {
-    	encodeAndPrint(new String(buf));
+        encodeAndPrint(new String(buf));
     }
 
     /** delegate methods, not synchronized **/
@@ -146,18 +146,18 @@ public class CodecPrintWriter extends GrailsPrintWriter {
             write("true");
         }
         else {
-        	write("false");
+            write("false");
         }
     }
 
     @Override
     public void print(final char c) {
-    	write(c);
+        write(c);
     }
 
     @Override
     public void print(final int i) {
-    	write(String.valueOf(i));
+        write(String.valueOf(i));
     }
 
     @Override
@@ -242,19 +242,19 @@ public class CodecPrintWriter extends GrailsPrintWriter {
 
     @Override
     public PrintWriter append(final char c) {
-    	write(c);
+        write(c);
         return this;
     }
 
     @Override
     public PrintWriter append(final CharSequence csq, final int start, final int end) {
-    	encodeAndPrint(csq.subSequence(start, end));
+        encodeAndPrint(csq.subSequence(start, end));
         return this;
     }
 
     @Override
     public PrintWriter append(final CharSequence csq) {
-    	encodeAndPrint(csq);
+        encodeAndPrint(csq);
         return this;
     }
 
@@ -271,29 +271,29 @@ public class CodecPrintWriter extends GrailsPrintWriter {
 
     @Override
     public void write(final StreamCharBuffer otherBuffer) {
-    	encodeAndPrint(otherBuffer);
+        encodeAndPrint(otherBuffer);
     }
 
     @Override
     public void print(final StreamCharBuffer otherBuffer) {
-    	encodeAndPrint(otherBuffer);
+        encodeAndPrint(otherBuffer);
     }
 
     @Override
     public void append(final StreamCharBuffer otherBuffer) {
-    	encodeAndPrint(otherBuffer);
+        encodeAndPrint(otherBuffer);
     }
 
     @Override
     public void println(final StreamCharBuffer otherBuffer) {
-    	encodeAndPrint(otherBuffer);
+        encodeAndPrint(otherBuffer);
         println();
     }
 
     @Override
     public GrailsPrintWriter leftShift(final StreamCharBuffer otherBuffer) {
         if (otherBuffer != null) {
-        	encodeAndPrint(otherBuffer);
+            encodeAndPrint(otherBuffer);
         }
         return this;
     }
