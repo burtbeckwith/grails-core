@@ -5,22 +5,34 @@
 task stubs {
     destinationDir = "$buildDir/docs/stubs"
     doFirst {
-        def antBuilderClasspath = services.get(org.gradle.api.internal.ClassPathRegistry).getClassPathFiles('ANT') +
-                configurations.groovy.files
         def isolatedAnt = services.get(org.gradle.api.internal.project.IsolatedAntBuilder)
-        isolatedAnt.execute(antBuilderClasspath) {
+        isolatedAnt.execute {
             mkdir(dir: destinationDir)
-            taskdef(name: "generatestubs", classname: "org.codehaus.groovy.grails.cli.GenerateStubsTask", classpath: sourceSets.main.runtimeClasspath.asPath)
+            taskdef(name: "generatestubs", classname: "org.codehaus.groovy.grails.cli.GenerateStubsTask") {
+                classpath {
+					for(sub in subprojects) {
+	                    pathelement path: sub.sourceSets.main.compileClasspath.asPath
+					}
+                }	
+			}
             generatestubs(destdir: destinationDir) {
                 classpath {
-                    pathelement path: sourceSets.main.runtimeClasspath.asPath
+					for(sub in subprojects) {
+	                    pathelement path: sub.sourceSets.main.compileClasspath.asPath
+					}
                 }
                 src {
-                    sourceSets.main.groovy.srcDirs.each { srcDir ->
-                        dirset(dir: srcDir) {
-                            exclude name: "**/*.properties"
-                        }
-                    }
+					for(sub in subprojects) {
+	                    sub.sourceSets.main.groovy.srcDirs.each { srcDir ->
+							if(srcDir.exists()) {
+		                        dirset(dir: srcDir) {
+		                            exclude name: "**/*.properties"
+		                        }
+								
+							}
+	                    }						
+					}
+
                 }
             }
         }
@@ -28,17 +40,19 @@ task stubs {
 }
 
 task docs {
-    destinationDir = 'doc'
+    destinationDir = file("${projectDir}/doc")
 }
 
-javadoc {
+task javadoc(type:Javadoc) {
+	classpath = files(subprojects.configurations.compile)
     dependsOn stubs
     maxMemory = '256M'
     destinationDir = file("$docs.destinationDir/javadoc")
-    source stubs.destinationDir, defaultSource
+    source subprojects.sourceSets.main.groovy.srcDirs + stubs.destinationDir
     include "org/codehaus/groovy/grails/**", "grails/**"
+	exclude "**/**.groovy"
     project.configure(options) {
-        windowTitle = "Grails $version"
+        windowTitle = "Grails $grailsVersion"
         docTitle = "<h1>Grails</h1>"
         encoding = "UTF-8"
         memberLevel = org.gradle.external.javadoc.JavadocMemberLevel.PACKAGE
@@ -52,10 +66,12 @@ javadoc {
     verbose = false
 }
 
-groovydoc {
+task groovydoc(type:Groovydoc) {
+	groovyClasspath = files(subprojects.configurations.compile)	
     destinationDir = file("$docs.destinationDir/api")
-    windowTitle = "Grails $version"
-    docTitle = "Grails $version"
+    windowTitle = "Grails $grailsVersion"
+    docTitle = "Grails $grailsVersion"
+    source subprojects.sourceSets.main.groovy.srcDirs
     use = true
 // Can't make these link methods to work
 //    link("http://static.springsource.org/spring/docs/3.0.x/javadoc-api", "org.springframework.")
@@ -63,25 +79,41 @@ groovydoc {
 //    link("http://download.oracle.com/javaee/5/api", "javax.")
 }
 
-task gdoc(dependsOn: groovydoc) << {
+task fetchGrailsDocsSource << {
     ant {
         mkdir dir: buildDir
         get src:"http://nodeload.github.com/grails/grails-doc/zipball/master", dest:"${buildDir}/grails-docs-src.zip", verbose:"true"
         unzip(src: "${buildDir}/grails-docs-src.zip", dest: buildDir) {
             mapper type: 'regexp', from:/(grails-grails-doc-[\w]*\/)(.*)/, to:/grails-docs-src\/\2/
         }
-        ant(target: 'distclean', dir: "${buildDir}/grails-docs-src/", inheritAll: false)
-        ant(target: 'dist-nojavadoc', dir: "${buildDir}/grails-docs-src/", inheritAll: false) {
-            property(name: "base.dir", value: "${buildDir}/grails-docs-src/")
-            property(name: "grails.home", value:projectDir)
-        }
-        copy(todir:"$projectDir/dist") {
-            fileset(dir: "${buildDir}/grails-docs-src/dist")
-        }
     }
-    copy {
-        from(new File("${buildDir}/grails-docs-src/output"))
-        into docs.destinationDir
+}
+
+task gdoc(type: GradleBuild, dependsOn: ["groovydoc", "fetchGrailsDocsSource"]) {
+    buildFile = "${buildDir}/grails-docs-src/build.gradle"
+    tasks = ["clean", "assemble"]
+
+    doFirst {
+        project.oldGrailsHome = System.getProperty("grails.home")
+        System.setProperty("grails.home", projectDir.absolutePath)
+        System.setProperty("disable.groovydocs", "true")
+    }
+
+    doLast {
+        if (project.oldGrailsHome) System.setProperty("grails.home", project.oldGrailsHome)
+        else System.clearProperty("grails.home")
+        System.clearProperty("disable.groovydocs")
+
+        ant.mkdir dir: "${projectDir}/dist"
+        copy {
+            from "${buildDir}/grails-docs-src/build/distributions"
+            into "${projectDir}/dist"
+        }
+
+        copy {
+            from file("${buildDir}/grails-docs-src/build/docs")
+            into docs.destinationDir
+        }
     }
 }
 

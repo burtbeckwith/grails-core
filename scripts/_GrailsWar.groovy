@@ -63,12 +63,7 @@ defaultWarDependencies = { antBuilder ->
         }
     }
     else {
-		IvyDependencyManager dependencyManager = grailsSettings.dependencyManager
-        def dependencies = dependencyManager.resolveDependencies(IvyDependencyManager.RUNTIME_CONFIGURATION)
-											.allArtifactsReports
-											.localFile
-		dependencies += grailsSettings.applicationJars
-		println "RESOLVED DEPENDENCIES ${dependencies.join('\n')}"
+		def dependencies = grailsSettings.runtimeDependencies
         if(dependencies) {
             for(File f in dependencies) {
                 fileset(dir: f.parent, includes: f.name)
@@ -79,10 +74,6 @@ defaultWarDependencies = { antBuilder ->
 
 target (configureRunningScript: "Sets the currently running script, in case called directly") {
     System.setProperty('current.gant.script',"war")
-}
-
-target(startLogging: "Bootstraps logging") {
-    // do nothing, overrides default behaviour so that logging doesn't kick in
 }
 
 target(checkInPlacePlugins: "Perform a check whether inplace plugins have been packaged") {
@@ -164,6 +155,10 @@ target (war: "The implementation target") {
                 include(name:"**/**")
                 exclude(name:"**/*.java")
             }
+            fileset(dir:"${grailsSettings.sourceDir}/groovy") {
+                include(name:"**/**")
+                exclude(name:"**/*.groovy")
+            }
             fileset(dir:"${resourcesDirPath}", includes:"log4j.properties")
         }
 
@@ -214,25 +209,13 @@ target (war: "The implementation target") {
         if (includeJars) {
             if (pluginInfos) {
                 def libDir = "${stagingDir}/WEB-INF/lib"
+                // Copy embedded libs (dependencies declared inside dependencies.groovy are already provided)
                 ant.copy(todir:libDir, flatten:true, failonerror:false, preservelastmodified:true) {
                     for (GrailsPluginInfo info in pluginInfos) {
                         fileset(dir: info.pluginDir.file.path) {
                             include(name:"lib/*.jar")
                         }
                     }
-                }
-
-                for(GrailsPluginInfo info in pluginInfos) {
-                    IvyDependencyManager freshManager = new IvyDependencyManager(info.name, info.version)
-                    freshManager.parseDependencies {}
-                    freshManager.chainResolver = grailsSettings.dependencyManager.chainResolver
-                    grailsSettings.pluginDependencyHandler(freshManager).call(info.pluginDir.file.canonicalFile)
-                    for(File file in freshManager.resolveDependencies("runtime").allArtifactsReports.localFile) {
-                        if(file) {
-                            ant.copy(file:file, todir:libDir)
-                        }
-                    }
-                    
                 }
             }
         }
@@ -469,7 +452,8 @@ private def warPluginForPluginInfo(GrailsPluginInfo info) {
     def confDir = new File("${pluginBase.absolutePath}/grails-app/conf")
     def hibDir = new File("${pluginBase.absolutePath}/grails-app/conf/hibernate")
     def javaDir = new File("${pluginBase.absolutePath}/src/java")
-    if (confDir.exists() || hibDir.exists() || javaDir.exists()) {
+    def groovyDir = new File("${pluginBase.absolutePath}/src/groovy")
+    if (confDir.exists() || hibDir.exists() || javaDir.exists() || groovyDir.exists()) {
         ant.copy(todir: targetClassesDir, failonerror: false, preservelastmodified:true) {
             if (confDir.exists()) {
                 fileset(dir: confDir) {
@@ -488,6 +472,13 @@ private def warPluginForPluginInfo(GrailsPluginInfo info) {
                 fileset(dir: javaDir) {
                     include(name: "**/**")
                     exclude(name: "**/*.java")
+                }
+            }
+
+            if (groovyDir.exists()) {
+                fileset(dir: groovyDir) {
+                    include(name: "**/**")
+                    exclude(name: "**/*.groovy")
                 }
             }
         }

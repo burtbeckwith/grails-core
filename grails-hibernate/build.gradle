@@ -1,0 +1,29 @@
+dependencies {
+
+    compile project(":grails-bootstrap"), project(":grails-core"), project(":grails-spring"),project(":grails-web")
+
+
+    // Srping Datastore APIs
+    compile 'org.grails:grails-datastore-gorm:1.0.0.BUILD-SNAPSHOT'
+    
+    // Hibernate related
+    compile 'org.hibernate:hibernate-annotations:3.4.0.GA',
+            'org.hibernate:hibernate-commons-annotations:3.1.0.GA',
+            'org.hibernate:hibernate-core:3.3.1.GA'
+    compile 'javassist:javassist:3.11.0.GA'
+
+
+
+    runtime 'org.hibernate:hibernate-validator:3.1.0.GA',
+            'org.hibernate:hibernate-ehcache:3.3.1.GA',
+            'antlr:antlr:2.7.6'
+             
+
+}
+test {
+//    maxParallelForks = 4
+    forkEvery = 100
+    maxHeapSize = '1024m'
+}
+
+jar.appendix = 'hibernate'

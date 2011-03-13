@@ -1,3 +1,5 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
 buildscript {
     repositories {
         mavenCentral()
@@ -7,92 +9,216 @@ buildscript {
     }
 }
 
-apply id: 'groovy'
 
-version = '1.4.0.BUILD-SNAPSHOT'
+apply plugin: 'idea'
 
-sourceCompatibility = "1.5"
-targetCompatibility = "1.5"
+grailsVersion = '1.4.0.BUILD-SNAPSHOT'
+antVersion = "1.7.1"
+springVersion = "3.0.5.RELEASE"
+ivyVersion = "2.2.0"
+gantVersion = "1.9.4-SNAPSHOT"
+groovyVersion = "1.8.0-rc-1"
+
 archivesBaseName = 'grails'
+version = grailsVersion
 
-configurations {
-    compile.transitive = true
-    jsp21.extendsFrom compile
+// Groovy is added as a dependency to both the 'groovy' and 'compile'
+// configurations, so place the dependency in a shared variable. The
+// 'compile' is required so that Groovy appears as a dependency in the
+// artifacts' POMs.
+if(System.getProperty('groovy.jar')) {
+    groovyDependency = files(System.getProperty('groovy.jar'))
+} else {
+    groovyDependency = "org.codehaus.groovy:groovy-all:${groovyVersion}"
 }
 
-dependencies {
-    lib = "$projectDir/lib"
-    groovy files(fileTree(dir: lib as File, includes: ['groovy-all-1.7.*.jar']))
-    compile files(fileTree(dir: lib as File, includes: ['*.jar'], excludes: ['jsp-api-2.1.jar', 'groovy-all-1.7.5.jar']), "${System.getenv('JAVA_HOME')}/lib/tools.jar")
-    jsp21 files("$lib/jsp-api-2.1.jar")
-}
 
-sourceSets {
-    main {
-        java {
-            srcDirs = []
+subprojects { project ->
+    apply plugin: 'groovy'
+    apply plugin: 'maven'
+    apply plugin: 'eclipse'
+    apply plugin: 'idea'
+
+    sourceCompatibility = "1.5"
+    targetCompatibility = "1.5"
+    archivesBaseName = 'grails'
+    version = grailsVersion
+	group = "org.grails"
+
+    manifest.mainAttributes(
+            "Built-By": System.properties['user.name'],
+            "Created-By": System.properties['java.vm.version'] + " (" + System.properties['java.vm.vendor'] + ")",
+            "Implementation-Title": "Grails",
+            "Ant-Version": 'Apache Ant 1.7.1', // todo we just have this property to make it easy to compare manifests. Remove it when this build is life
+            "Implementation-Version": grailsVersion,
+            "Implementation-Vendor": 'grails.org')
+
+
+    configure([compileGroovy, compileTestGroovy]) {
+        groovyOptions.fork(memoryInitialSize: '128M', memoryMaximumSize: '1G')
+        groovyOptions.encoding = "UTF-8"
+    }
+
+    configure([compileJava, compileTestJava]) {
+        options.deprecation = true
+        options.debug = true
+    }
+
+
+    repositories {
+        mavenCentral()
+        mavenRepo urls:"http://maven.springframework.org/release"
+        mavenRepo urls:'http://maven.springframework.org/snapshot'
+    }
+    dependencies {
+        // Groovy
+        groovy groovyDependency
+        compile groovyDependency
+
+        // Jars in lib
+        compile files(fileTree(dir:"$projectDir/src/libs" as File))
+
+
+        compile 'commons-beanutils:commons-beanutils:1.8.0',
+                'commons-cli:commons-cli:1.0',
+                'commons-codec:commons-codec:1.4',
+                'commons-collections:commons-collections:3.2.1',
+                'commons-io:commons-io:1.4',
+                'commons-lang:commons-lang:2.4',
+                'commons-validator:commons-validator:1.3.1'
+        // Apache Commons
+
+        // Others
+        runtime( 'cglib:cglib-nodep:2.1_3')
+
+        compile 'com.googlecode.concurrentlinkedhashmap:concurrentlinkedhashmap-lru:1.1_jdk5'
+
+        runtime 'aopalliance:aopalliance:1.0',
+                'org.aspectj:aspectjrt:1.6.10',
+                'org.aspectj:aspectjweaver:1.6.10',
+                'net.sf.ehcache:ehcache-core:2.3.1'
+
+
+        // XML
+        runtime 'xalan:serializer:2.7.1'
+
+        // Logging
+        compile 'log4j:log4j:1.2.16'
+        compile 'org.slf4j:slf4j-api:1.6.1'
+        compile 'org.slf4j:jcl-over-slf4j:1.6.1'
+
+        runtime'org.slf4j:slf4j-log4j12:1.6.1'
+        runtime 'org.slf4j:jul-to-slf4j:1.6.1'
+
+
+        // Specs
+        compile 'javax.servlet:servlet-api:2.5'
+        compile 'javax.transaction:jta:1.1'
+        compile 'javax.persistence:persistence-api:1.0'
+
+        // Spring
+
+        compile "org.springframework:spring-aop:${springVersion}",
+                "org.springframework:spring-asm:${springVersion}",
+                "org.springframework:spring-aspects:${springVersion}",
+                "org.springframework:spring-beans:${springVersion}",
+                "org.springframework:spring-context:${springVersion}",
+                "org.springframework:spring-core:${springVersion}",
+                "org.springframework:spring-expression:${springVersion}",
+                "org.springframework:spring-instrument:${springVersion}",
+                "org.springframework:spring-jdbc:${springVersion}",
+                "org.springframework:spring-jms:${springVersion}",
+                "org.springframework:spring-orm:${springVersion}",
+                "org.springframework:spring-oxm:${springVersion}",
+                "org.springframework:spring-test:${springVersion}",
+                "org.springframework:spring-tx:${springVersion}",
+                "org.springframework:spring-web:${springVersion}",
+                "org.springframework:spring-webmvc:${springVersion}"
+
+        // Testing
+        testCompile 'junit:junit:4.8.1'
+        testCompile('org.spockframework:spock-core:0.5-groovy-1.8') {
+            transitive = false
         }
-        groovy {
-            srcDirs = ['src/java']
-        }
-        resources {
-            srcDirs = ['src/java']
-            include '**/*.properties', '**/*.xsd', '**/*.dtd'
+
+    }
+
+    install.doLast {
+        copy {
+            from(project.libsDir) {
+                include "*-${grailsVersion}.jar"
+            }
+            into "${rootProject.projectDir}/dist"
         }
     }
-    jsp21 {
-        compileClasspath = files(configurations.jsp21, main.classes)
-        groovy.srcDirs = ['src/jsp21']
-        resources.srcDirs = []
-    }
+
     test {
-        java {
-            srcDirs = []
-        }
-        groovy {
-            srcDirs = ['src/test']
-        }
-        resources {
-            srcDirs = ['src/test', 'src/jar']
-            exclude '**/*.java', '**/*.groovy'
-        }
+        excludes = ["**/*TestCase.class", "**/*\$*.class"]
     }
-    buildScripts {
-        compileClasspath = sourceSets.main.compileClasspath + main.classes
-        classesDir = "$buildDir/compiled-scripts" as File
-        groovy.srcDirs = ['scripts']
-        resources.srcDirs = []
+
+    task sourcesJar(type: Jar, dependsOn:classes) {
+        classifier = 'sources'
+        appendix = project.name[7..-1]
+        from sourceSets.main.allSource
+    }
+
+    task javadocJar(type: Jar, dependsOn:javadoc) {
+        classifier = 'javadoc'
+        appendix = project.name[7..-1]
+        from javadoc.destinationDir
+    }
+
+    artifacts {
+        archives sourcesJar
+        archives javadocJar
     }
 }
 
-jsp21Classes.dependsOn classes
-task allClasses(dependsOn: [classes, jsp21Classes, buildScriptsClasses])
-
-configure([compileGroovy, compileTestGroovy]) {
-    groovyOptions.fork(memoryInitialSize: '128M', memoryMaximumSize: '1G')
-    groovyOptions.encoding = "UTF-8"
-}
-
-configure([compileJava, compileTestJava]) {
-    options.deprecation = true
-    options.debug = true
-}
 
 apply {
-    url 'gradle/docs.gradle'
-    url 'gradle/assemble.gradle'
-    url 'gradle/unit-test.gradle'
-    url 'gradle/maven.gradle'
-    url 'gradle/findbugs.gradle'
+    from 'gradle/docs.gradle'
+    from 'gradle/assemble.gradle'
 }
 
-clean {
+task clean << {
     // add additional dirs
-    from(docs.destinationDir, libs.destinationDir)
+//    delete(docs.destinationDir, libs.destinationDir)
+    delete(libs.destinationDir)
+    delete(buildDir)
 }
 
-task wrapper(type: Wrapper) {
-    gradleVersion = '0.9-20100118091626+0100'
-    jarPath = 'gradle/wrapper'
+task install(dependsOn:[populateDependencies])
+
+
+install.doLast {
+    copy {
+        from('src/resources/tests')
+        into('lib')
+        filter(ReplaceTokens, tokens: ['grails.version': grailsVersion])
+    }
+
+    copy {
+        from("src/resources/bash")
+        filter(ReplaceTokens, tokens: ['grails.version': grailsVersion])
+        filter(ReplaceTokens, tokens: ['groovy.version': groovyVersion])
+        fileMode = 0755
+        into "bin"
+
+    }
+    // the fileMode property above should take care of the chmod work, but
+    // it doesn't per http://jira.codehaus.org/browse/GRADLE-971
+    ant.chmod(dir: 'bin', perm: '755', includes: '*')
+    
+    copy {
+        from("src/resources/conf")
+        into "conf"
+        filter(ReplaceTokens, tokens: ['grails.version': grailsVersion])
+        filter(ReplaceTokens, tokens: ['groovy.version': groovyVersion])
+        filter(ReplaceTokens, tokens: ['ant.version': antVersion])
+        filter(ReplaceTokens, tokens: ['gant.version': gantVersion])
+        filter(ReplaceTokens, tokens: ['ivy.version': ivyVersion])
+    }
 }
 
+
+task assemble(dependsOn:zipDist)

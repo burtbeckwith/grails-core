@@ -1,0 +1,25 @@
+import org.apache.tools.ant.filters.ReplaceTokens
+
+dependencies {
+    compile( 'org.codehaus.gpars:gpars:0.9' ) {
+        exclude module:'netty'
+    }
+
+    // Ant
+    compile "org.apache.ant:ant:${antVersion}",
+            "org.apache.ant:ant-launcher:${antVersion}",
+            "org.apache.ant:ant-junit:${antVersion}",
+            "org.apache.ant:ant-nodeps:${antVersion}",
+            "org.apache.ant:ant-trax:${antVersion}",
+            "org.apache.ivy:ivy:${ivyVersion}",
+            'org.codehaus.gant:gant_groovy1.7:1.9.3'
+
+    runtime 'org.coconut.forkjoin:jsr166y:070108'
+}
+
+processResources{
+   inputs.property "version", version
+   filter(ReplaceTokens, tokens:[version:version])
+}
+
+jar.appendix = 'bootstrap'
